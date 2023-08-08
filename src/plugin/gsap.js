@@ -1,0 +1,8 @@
+// gsap.js
+import { gsap } from 'gsap'
+
+export default {
+  install(app) {
+    app.config.globalProperties.$gsap = gsap;
+  }
+}
