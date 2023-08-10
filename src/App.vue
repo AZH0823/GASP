@@ -6,14 +6,14 @@ const $gsap = inject('$gsap');
 let tween = null
 let ctx = null
 let tl
- = null
+let scroll = null
 const boxMoveWithTo = ref(null)
 console.log($gsap); // 檢查 $gsap 是否為 undefined 或正確註冊
 
 onMounted(() => {
   // console.log($gsap)
   ctx = canvas.value.getContext("2d");
-  ctx.fillStyle = "#28a92b";
+  let c = null
   gsapInitCustom()
   if($gsap){
     // use a class or ID ex:".box" or "#box"
@@ -26,7 +26,6 @@ onMounted(() => {
       rotation: 360,
       ease: "none",
       paused: true,
-     
     });
     $gsap.to(boxMoveWithTo.value, { rotation: 27, x: 100, fill: 'blue', duration: .75,
               yoyo: true,
@@ -36,8 +35,8 @@ onMounted(() => {
                     grid: "auto",
                     from: "center"
               },
-               repeat: -1,
-               repeatDelay: .32,
+              repeat: -1,
+              repeatDelay: .32,
     })
 
     $gsap.from(".form", { x: -100, fill: 'blue', duration: 1.5 });
@@ -47,11 +46,13 @@ onMounted(() => {
     }, fill: 'blue', }, { x: 100, fill: 'green', duration: 1.5, rotation: 360, duration: 2, ease: "bounce.out" });
     
     $gsap.set(".set", { x: 100, y: 50 });
-    $gsap.to(".set", { duration: 0, x: 100, y: 50, fill:'pink'});
+    $gsap.to(".set", { duration: 0, x: 100, y: 50, backgroundColor:'pink'});
 
-    $gsap.to(".scroll", {
+    scroll = $gsap.to(".scroll", {
       rotation: 900,
       duration: 1,
+      repeat: -1,
+      yoyo: true,
       scrollTrigger: {
         trigger: '.box',
         scrub: 2,
@@ -67,10 +68,12 @@ onMounted(() => {
         duration: 3
       }
     })
-     tl = $gsap.timeline({ repeat: -1, repeatDelay: .5, yoyo: true })
-    tl.to(".box.purple", { rotation: 360 });
-    tl.to(".box.purple", { scale: 2.2 });
-    tl.to(".box.purple", { rotation: -360 });
+    
+    // timerline
+    tl = $gsap.timeline({ repeat: -1, repeatDelay: .5, yoyo: true })
+    tl.to(".box.purple-1",{ rotation: 360 ,backgroundColor:'red'});
+    tl.to(".box.purple-1", { scale: 2.2 });
+    tl.to(".box.purple-1", { rotation: -360, backgroundColor:'green' });
   }
   
  
@@ -78,19 +81,25 @@ onMounted(() => {
 
 // const AnimTimeline1 = 
 const clickHandle = (element)=>{
-  $gsap.to(`.${element}`, {
-    duration: 0.5,
-    opacity: 0,
-    y: -100,
-    stagger: 0.1,
-    ease: "back.in"
-  });
+  if(element ==='set'){
+    $gsap.to(`.${element}`, {
+      duration: 0.85,
+      opacity: 0,
+      y: -5100,
+      stagger: 0.1,
+      ease: "back.in"
+    });
+  } else if(element ==='scroll'){
+    scroll.kill()
+    $gsap.to(`.${element}`, {
+      duration: 0.85,
+      opacity: 0,
+      y: 500,
+      stagger: 0.1,
+      ease: "back.in"
+    });
+  }
 }
-
-const playAnimHandler = (element)=>{
-
-}
-
 
 // play pause resume reverse restart
 const btns = ref(null)
@@ -115,34 +124,51 @@ const clickModeHandler = (mode)=>{
   }
 }
 
+
+// canvas with onUpdate Hook 使用
 let position = { x: 0, y: 0 };
 const canvas = ref(null)
 
 //把position的x和y的值进行变化
-$gsap.to(position, {
+let canvasGsap = $gsap.to(position, {
   x: 50,
   y: 50,
-  duration: 4,
+  duration: 2.5,
+  repeat: 3,
+  yoyo: true,
+  backgroundColor:'pink',
   // canvas需要在每一帧进行重新绘制，才会有动画效果
+  onStart: ()=>{
+    console.log(`onStart`)
+    ctx.fillStyle = "#28a92b";
+  },
   onUpdate: () => {
     // 擦除canvas
+    console.log(`onUpdate`)
     ctx.clearRect(0, 0, 500, 500);
+    ctx.fillStyle = "#28a9eb";
     // 在新的位置重新绘制方块
-    ctx.fillRect(position.x, position.y, 100, 100);
+    ctx.fillRect(position.x, position.y, 250, 250);
+  },
+  onComplete:()=>{
+    console.log(`onComplete`)
+    ctx.fillStyle = "#CD1FCC";
+    canvasGsap.kill()
   }
 });
 </script>
 
 <template>
   <div class="container">
-    <div class="box red mt-b" ref="boxMoveWithTo">boxMoveWithTo</div>
     <div class="box green form mt-b">form</div>
     <div class="box red fromTo mt-b">fromTo</div>
-    <div class="box green set mt-b cusor" @click.self="clickHandle('set')">set</div>
-    <div class="box green scroll mt-b" @click="clickHandle('scroll')">scroll</div>
+    <div class="box green set mt-b cusor" @click.self="clickHandle('set')">set點我</div>
+    <div class="box green scroll mt-b" @click="clickHandle('scroll')">scroll點我</div>
     <div class="box purple custom mt-b">custom</div>
+    <div class="box red mt-b" ref="boxMoveWithTo">boxMoveWithTo</div>
   </div>     
   <div class="container mt">
+    <h1>animate player Control</h1>
     <div class="viewBox">anmintor</div>
     <div class="btns" ref="btns">
       <button id="play" @click="clickModeHandler('play')">play()</button>
@@ -160,7 +186,7 @@ $gsap.to(position, {
   </div>
   <div class="container mt">
     <h1>Timeline 動畫呈現</h1>
-    <div class="box purple">
+    <div class="box purple-1">
       Timeline
     </div>
   </div>
@@ -178,7 +204,7 @@ $gsap.to(position, {
   /* overflow: hidden; */
 }
 .mt{
-  margin-top: 50vh;
+  margin-top: 10vh;
 }
 .mt-b{
   margin: 20px 0;
@@ -219,6 +245,7 @@ $gsap.to(position, {
 .btns{
   display: flex;
   flex-wrap: wrap;
+  margin-top: 30px;
   .btns > button{
     width: 120px;
     text-align: center;
